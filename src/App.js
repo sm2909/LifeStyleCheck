@@ -3,7 +3,7 @@ import { Activity, Send, RotateCcw, User, Bot, AlertCircle, CheckCircle, ArrowRi
 
 // --- Configuration ---
 // In the actual environment, the API key is injected automatically.
-const apiKey = ""; 
+const WORKER_URL = "https://worker.sm-sarang09.workers.dev"; 
 
 const SYSTEM_INSTRUCTION = `
 You are "LifeStyleCheck", a smart, socially relevant lifestyle assessment assistant designed for workers, artisans, students, and individuals engaged in daily livelihood activities.
@@ -79,38 +79,30 @@ DISCLAIMER (MANDATORY):
 // --- API Helpers ---
 
 const callGeminiChat = async (history) => {
-  if (!apiKey) {
-    return new Promise(resolve => {
-        setTimeout(() => {
-            if (history.length > 8) return resolve("[[GENERATE_REPORT]]");
-            resolve("That's good to know. Could you tell me a bit more about your daily diet? Do you tend to eat home-cooked meals or order out?");
-        }, 1500);
-    });
-  }
-
   try {
-    const contents = history.map(msg => ({
-      role: msg.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: msg.text }]
+    const contents = history.map((msg) => ({
+      role: msg.sender === "user" ? "user" : "model",
+      parts: [{ text: msg.text }],
     }));
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: contents,
-          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-          generationConfig: {
-            maxOutputTokens: 200,
-          }
-        })
-      }
-    );
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents,
+        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+        generationConfig: {
+          maxOutputTokens: 200,
+        },
+      }),
+    });
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "I see. Let's move on. How is your sleep quality?";
+
+    return (
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "I see. How is your sleep quality?"
+    );
   } catch (error) {
     console.error("API Error:", error);
     return "I'm having trouble connecting. Could you repeat that?";
@@ -118,30 +110,38 @@ const callGeminiChat = async (history) => {
 };
 
 const generateFinalReport = async (history) => {
-  if (!apiKey) {
-    return `## Simulation Report\n**Note:** API Key missing.\n\n### Risks\n- Simulated Risk A\n- Simulated Risk B\n\n### Advice\n- Drink more water.\n- Sleep 8 hours.`;
-  }
-
   try {
-    const conversationText = history.map(m => `${m.sender.toUpperCase()}: ${m.text}`).join('\n');
-    
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
-      {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ parts: [{ text: `${REPORT_PROMPT}\n\nCONVERSATION LOG:\n${conversationText}` }] }]
-        })
-      }
-    );
+    const conversationText = history
+      .map((m) => `${m.sender.toUpperCase()}: ${m.text}`)
+      .join("\n");
+
+    const response = await fetch(WORKER_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        contents: [
+          {
+            parts: [
+              {
+                text: `${REPORT_PROMPT}\n\nCONVERSATION LOG:\n${conversationText}`,
+              },
+            ],
+          },
+        ],
+      }),
+    });
 
     const data = await response.json();
-    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating report.";
+
+    return (
+      data.candidates?.[0]?.content?.parts?.[0]?.text ||
+      "Error generating report."
+    );
   } catch (error) {
     return "Failed to generate report due to a connection error.";
   }
 };
+
 
 // --- Components ---
 
