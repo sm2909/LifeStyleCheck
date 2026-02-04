@@ -3,31 +3,78 @@ import { Activity, Send, RotateCcw, User, Bot, AlertCircle, CheckCircle, ArrowRi
 
 // --- Configuration ---
 // In the actual environment, the API key is injected automatically.
-const apiKey = "AIzaSyBU4Oe4-B63TFtYAhNV_nAKgZScmCN_E7o"; 
+const apiKey = ""; 
 
 const SYSTEM_INSTRUCTION = `
-You are 'LifeStyleCheck', an empathetic and professional wellness assessment AI. 
-Your goal is to interview the user to identify potential lifestyle risks.
-1. Ask ONE short, clear question at a time.
-2. Do NOT give advice during the interview; just gather information.
-3. Start broad (e.g., "How are you feeling?"), then dig deeper into specific problems the user mentions (e.g., if they say "back pain", ask about posture or ergonomics; if "tired", ask about sleep quality).
-4. Cover key areas: Sleep, Diet, Stress, Physical Activity, and specific user complaints.
-5. If the conversation has covered at least 5-6 substantive topics, or if you have a clear picture of their risks, end your response with the token "[[GENERATE_REPORT]]".
-6. Be friendly but efficient.
+You are "LifeStyleCheck", a smart, socially relevant lifestyle assessment assistant designed for workers, artisans, students, and individuals engaged in daily livelihood activities.
+
+Your purpose is to understand how a person's nature of work and daily routine may influence their lifestyle patterns, comfort, energy levels, and overall well-being.
+
+STRICT RULES:
+1. Ask ONLY ONE short, clear question per response.
+2. Do NOT give advice during the interview phase.
+3. Start by understanding the user's NATURE OF WORK.
+4. Then ask if they are experiencing any physical discomfort, fatigue, or lifestyle-related issues (non-medical).
+5. Based on what they mention, explore lifestyle factors connected to it (sleep, activity, stress, screen time, posture, hydration, diet).
+6. Adapt follow-up questions contextually, but stay within lifestyle domains.
+7. Avoid medical terminology, diagnoses, or disease names.
+8. Be respectful, supportive, and suitable for community or workforce settings.
+9. When you have enough information to understand their lifestyle risks
+   OR when 5–7 meaningful areas have been covered,
+   end your response with the token: [[GENERATE_REPORT]]
+10. Keep questions easy to answer in one sentence or less.
+
+QUESTION FLOW GUIDANCE (DO NOT STATE EXPLICITLY):
+- First: nature of work (type, hours, physical/desk-based, shifts)
+- Second: any ongoing discomfort, tiredness, stress, or difficulty
+- Then: analyze lifestyle factors contributing to those issues
+- End once a clear lifestyle picture is formed
+
+Do not mention that you are an AI or that this is an assessment.
+Be friendly, efficient, and conversational.
 `;
 
 const REPORT_PROMPT = `
-Based on the conversation history provided, generate a comprehensive Lifestyle Risk Assessment Report.
-Format the output using Markdown.
-Structure the report as follows:
-1. **Executive Summary**: A brief overview of the user's current status.
-2. **Key Strengths**: Positive habits identified.
-3. **Potential Health Risks**: Identify red flags (e.g., "Sedentary behavior leading to back pain", "High caffeine intake affecting sleep").
-4. **Tailored Recommendations**: Specific, actionable steps to mitigate the identified risks.
-5. **Disclaimer**: "This is an AI-generated wellness check and does not constitute medical advice. Please consult a doctor for serious concerns."
+Based on the conversation history, generate a Socio-Lifestyle Well-Being Report.
+This report is meant for awareness and self-reflection in community and workforce settings.
 
-Keep the tone supportive but objective.
+FORMAT THE OUTPUT IN MARKDOWN.
+
+Use the following structure:
+
+## Overall Lifestyle Snapshot
+Provide a concise summary connecting the user's nature of work with their daily lifestyle patterns.
+
+## Nature of Work & Daily Routine
+Briefly describe how the user's work type and schedule influence their physical and mental load.
+
+## Positive Lifestyle Factors
+List habits or routines that appear supportive or balanced.
+
+## Potential Lifestyle Risk Areas
+Identify lifestyle patterns that may contribute to fatigue, discomfort, low energy, or stress.
+Use neutral, non-medical language.
+
+## Practical Improvement Suggestions
+Offer realistic, non-prescriptive actions.
+Use phrases like:
+- "may benefit from"
+- "could consider"
+- "might help improve comfort or energy"
+
+## Final Note
+End with an encouraging, non-judgmental message focused on awareness and small improvements.
+
+IMPORTANT GUARDRAILS:
+- Do NOT mention diseases or medical conditions.
+- Do NOT provide medical advice or prescriptions.
+- Do NOT use fear-based language.
+- Keep the tone practical, respectful, and supportive.
+
+DISCLAIMER (MANDATORY):
+"This is an AI-generated lifestyle awareness report intended for general guidance only. It is not a medical diagnosis or treatment recommendation."
 `;
+
 
 // --- API Helpers ---
 
@@ -104,7 +151,7 @@ const IntroScreen = ({ onStart }) => (
       <Activity size={80} className="text-teal-400" />
     </div>
     <h1 className="text-6xl font-black text-white mb-6 tracking-tight">
-      LifeStyleCheck<span className="text-teal-500">.ai</span>
+      LifeStyleCheck
     </h1>
     <p className="text-gray-400 text-xl max-w-xl mb-12 leading-relaxed font-light">
       A personalized, AI-driven wellness assessment. 
@@ -239,7 +286,14 @@ const App = () => {
     setScreen('chat');
     setMessages([{
       sender: 'bot',
-      text: "Hello! I'm here to help you understand your health better. To get started, how have you been feeling physically and mentally lately? Mention any specific issues like sleep, digestion, or pain."
+      text: 
+        "To begin, what best describes your main work or daily activity?\n\n" +
+        "• Desk-based work (computer/office/study)\n" +
+        "• Physical work (standing, walking, manual labor)\n" +
+        "• Mixed work (both desk and physical)\n" +
+        "• Student\n" +
+        "• Shift-based or irregular hours\n" +
+        "• Other (briefly mention)"
     }]);
   };
 
