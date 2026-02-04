@@ -1,0 +1,15 @@
+{
+  "files": {
+    "main.css": "/sm2909/LifeStyleCheck/static/css/main.c509b180.css",
+    "main.js": "/sm2909/LifeStyleCheck/static/js/main.d5876da6.js",
+    "static/js/453.6feea198.chunk.js": "/sm2909/LifeStyleCheck/static/js/453.6feea198.chunk.js",
+    "index.html": "/sm2909/LifeStyleCheck/index.html",
+    "main.c509b180.css.map": "/sm2909/LifeStyleCheck/static/css/main.c509b180.css.map",
+    "main.d5876da6.js.map": "/sm2909/LifeStyleCheck/static/js/main.d5876da6.js.map",
+    "453.6feea198.chunk.js.map": "/sm2909/LifeStyleCheck/static/js/453.6feea198.chunk.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.c509b180.css",
+    "static/js/main.d5876da6.js"
+  ]
+}
