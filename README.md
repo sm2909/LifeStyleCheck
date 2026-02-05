@@ -1,6 +1,10 @@
 # LifeStyleCheck
 
-LifeStyleCheck is a React application designed to help users monitor and improve their lifestyle choices. This project leverages modern web technologies, including Tailwind CSS for styling, Lucide React icons for beautiful UI elements, markdown support for rich content, and Google's Generative AI for intelligent recommendations.
+LifeStyleCheck is a **Smart AI-Based Lifestyle Self-Assessment Tool** designed to support workers, artisans, and students by helping them understand and improve their daily routines. This chat-based web application asks 10 simple, non-medical lifestyle questions covering areas such as sleep, physical activity, diet, hydration, stress, screen time, work–life balance, and social interaction.
+
+Using **Generative AI (Google Gemini API)**, the system analyzes user responses and generates a structured lifestyle report highlighting positive habits, potential risk areas, and realistic improvement suggestions. The solution does not store personal data, ensuring privacy and ethical usage.
+
+This project aligns with NSS themes of **Artisans, Industries and Livelihood** and **Basic Amenities**, focusing on improving daily well-being, awareness, and productivity through smart technology.
 
 ## Table of Contents
 
@@ -8,6 +12,7 @@ LifeStyleCheck is a React application designed to help users monitor and improve
 - [Tech Stack](#tech-stack)
 - [Installation](#installation)
 - [Getting Started](#getting-started)
+- [Environment Setup](#environment-setup)
 - [Available Scripts](#available-scripts)
 - [Project Structure](#project-structure)
 - [Contributing](#contributing)
@@ -15,21 +20,22 @@ LifeStyleCheck is a React application designed to help users monitor and improve
 
 ## Features
 
-- 🎯 **Lifestyle Tracking**: Monitor your daily habits and lifestyle choices.
-- 🎨 **Modern UI**: Clean and intuitive interface with Tailwind CSS styling.
-- 📝 **Markdown Support**: Rich text editing and display with React Markdown.
-- 🤖 **AI Integration**: Powered by Google's Generative AI for smart recommendations.
-- 🎭 **Icon Library**: Beautiful icons from Lucide React.
-- 📱 **Responsive Design**: Works seamlessly on desktop and mobile devices.
+- 🤖 **AI-Powered Assessment**: 10-question conversational self-assessment using Google Gemini API
+- 📱 **User-Friendly Interface**: Dark-themed, SaaS-style UI with Tailwind CSS
+- 🔒 **Privacy-Focused**: No personal data storage, anonymous usage
+- 📝 **Structured Reports**: Actionable lifestyle insights and improvement suggestions
+- 🎯 **Non-Medical Approach**: Focus on habits and routines, not health diagnosis
+- 🌍 **Accessible Design**: Suitable for users with varying digital literacy levels
+- 📊 **Responsive**: Works on desktop and mobile devices
 
 ## Tech Stack
 
-- **React**: UI library for building interactive components.
-- **Tailwind CSS**: Utility-first CSS framework for styling.
-- **Lucide React**: Icon library with hundreds of beautiful SVG icons.
-- **React Markdown**: Component for rendering markdown content.
-- **Google Generative AI**: Integration for AI-powered features.
-- **Create React App**: Build and development tooling.
+- **Frontend**: React, Tailwind CSS, Lucide React icons
+- **AI Integration**: Google Generative AI (Gemini API)
+- **Build Tool**: Create React App (with Vite support for testing)
+- **Deployment**: Cloudflare Pages (Wrangler)
+- **Testing**: Vitest, React Testing Library
+- **Markdown Rendering**: React Markdown
 
 ## Installation
 
@@ -37,14 +43,15 @@ LifeStyleCheck is a React application designed to help users monitor and improve
 
 - Node.js (version 14 or higher)
 - npm or yarn package manager
+- Google Gemini API key (from Google AI Studio)
 
 ### Setup
 
 1. Clone the repository:
 
 ```bash
-git clone https://github.com/yourusername/LifeStyleCheck.git
-cd LifeStyleCheck/life-style-check
+git clone https://github.com/sm2909/LifeStyleCheck.git
+cd LifeStyleCheck
 ```
 
 2. Install dependencies:
@@ -53,13 +60,23 @@ cd LifeStyleCheck/life-style-check
 npm install
 ```
 
-3. Set up environment variables (if using Google Generative AI):
+## Environment Setup
 
-Create a `.env.local` file in the root directory:
+1. Obtain a Google Gemini API key from [Google AI Studio](https://makersuite.google.com/app/apikey).
+
+2. Create a `.env.local` file in the root directory of the project:
+
+```bash
+touch .env.local
+```
+
+3. Add your API key to the `.env.local` file:
 
 ```
-REACT_APP_GOOGLE_API_KEY=your_api_key_here
+REACT_APP_GOOGLE_API_KEY=your_actual_api_key_here
 ```
+
+**Important**: Never commit the `.env.local` file to version control. It is already included in `.gitignore`.
 
 ## Getting Started
 
@@ -95,6 +112,13 @@ Builds the app for production to the `build` folder.
 - Optimizes the build for the best performance.
 - Build is minified and filenames include hashes.
 
+### `npm run deploy`
+
+Deploys the app to GitHub Pages using gh-pages.
+
+- Runs `npm run build` first
+- Deploys the `build` folder to GitHub Pages
+
 ### `npm run eject`
 
 **Note: this is a one-way operation. Once you eject, you can't go back!**
@@ -104,19 +128,47 @@ If you need to customize the webpack configuration or other tooling, you can eje
 ## Project Structure
 
 ```
-life-style-check/
+LifeStyleCheck/
 ├── public/
-│   ├── index.html        # Main HTML file
-│   ├── manifest.json     # PWA manifest
-│   └── robots.txt        # SEO robots file
+│   ├── index.html          # Main HTML template
+│   ├── manifest.json       # PWA manifest for app installation
+│   └── robots.txt          # SEO robots configuration
 ├── src/
-│   ├── App.js            # Main application component
-│   ├── App.css           # Application styles
-│   ├── index.js          # Entry point
-│   ├── index.css         # Global styles
-│   ├── reportWebVitals.js # Performance monitoring
-│   └── setupTests.js     # Test configuration
-├── tailwind.config.js    # Tailwind CSS configuration
-├── package.json          # Project dependencies
-└── README.md             # This file
+│   ├── App.css             # Main application styles
+│   ├── App.js              # Root React component
+│   ├── App.test.js         # Tests for App component
+│   ├── index.css           # Global CSS styles
+│   ├── index.js            # React application entry point
+│   ├── reportWebVitals.js  # Web vitals reporting
+│   └── setupTests.js       # Test setup configuration
+├── test/
+│   └── index.spec.js       # Additional test files
+├── build/                  # Production build output (generated)
+│   ├── index.html
+│   ├── manifest.json
+│   ├── robots.txt
+│   └── static/
+│       ├── css/
+│       └── js/
+├── package.json            # Project dependencies and scripts
+├── tailwind.config.js      # Tailwind CSS configuration
+├── vitest.config.js        # Vitest testing configuration
+├── wrangler.toml           # Cloudflare Pages deployment config
+├── wrangler.jsonc          # Alternative Cloudflare config
+├── Report.md               # Project report and documentation
+└── README.md               # This file
 ```
+
+## Contributing
+
+Contributions are welcome! Please feel free to submit a Pull Request.
+
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
+
+## License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
