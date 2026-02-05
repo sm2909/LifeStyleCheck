@@ -3,10 +3,7 @@ import { Activity, Send, RotateCcw, User, Bot, AlertCircle, CheckCircle, ArrowRi
 
 // --- Configuration ---
 // In the actual environment, the API key is injected automatically.
-const GEMINI_API_KEY = process.env.REACT_APP_GEMINI_API_KEY;
-
-const GEMINI_URL =
-  `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${GEMINI_API_KEY}`;
+const apiKey = process.env.REACT_APP_GEMINI_API_KEY;
 
 const SYSTEM_INSTRUCTION = `
 You are "LifeStyleCheck", a smart, socially relevant lifestyle assessment assistant designed for workers, artisans, students, and individuals engaged in daily livelihood activities.
@@ -38,120 +35,85 @@ Be friendly, efficient, and conversational.
 `;
 
 const REPORT_PROMPT = `
-Based on the conversation history, generate a Socio-Lifestyle Well-Being Report.
-This report is meant for awareness and self-reflection in community and workforce settings.
+Based on the conversation history, generate a "Lifestyle Balance Report" for the user.
+The user is likely a student, artisan, or industrial worker. Keep the language simple, encouraging, and practical.
 
-FORMAT THE OUTPUT IN MARKDOWN.
-
-Use the following structure:
-
-## Overall Lifestyle Snapshot
-Provide a concise summary connecting the user's nature of work with their daily lifestyle patterns.
-
-## Nature of Work & Daily Routine
-Briefly describe how the user's work type and schedule influence their physical and mental load.
-
-## Positive Lifestyle Factors
-List habits or routines that appear supportive or balanced.
-
-## Potential Lifestyle Risk Areas
-Identify lifestyle patterns that may contribute to fatigue, discomfort, low energy, or stress.
-Use neutral, non-medical language.
-
-## Practical Improvement Suggestions
-Offer realistic, non-prescriptive actions.
-Use phrases like:
-- "may benefit from"
-- "could consider"
-- "might help improve comfort or energy"
-
-## Final Note
-End with an encouraging, non-judgmental message focused on awareness and small improvements.
-
-IMPORTANT GUARDRAILS:
-- Do NOT mention diseases or medical conditions.
-- Do NOT provide medical advice or prescriptions.
-- Do NOT use fear-based language.
-- Keep the tone practical, respectful, and supportive.
-
-DISCLAIMER (MANDATORY):
-"This is an AI-generated lifestyle awareness report intended for general guidance only. It is not a medical diagnosis or treatment recommendation."
+**Format:** Markdown.
+**Structure:**
+1. **Overview**: A warm, short summary of their daily routine based on what they told you.
+2. **What You're Doing Well**: Highlight positive habits (e.g., "Good job drinking enough water").
+3. **Areas to Watch**: Gentle identification of risks (e.g., "Irregular sleep schedules", "High screen time").
+4. **Simple Steps Forward**: 3-4 realistic, non-medical tips to improve well-being (e.g., "Try stretching for 5 mins", "Reduce phone use before bed").
+5. **Disclaimer**: "This is a self-reflection tool, not a medical diagnosis. Please consult a doctor for health concerns."
 `;
-
 
 // --- API Helpers ---
 
 const callGeminiChat = async (history) => {
+  if (!apiKey) {
+    // Fallback simulation for when API key is missing
+    return new Promise(resolve => {
+        setTimeout(() => {
+            if (history.length > 20) return resolve("[[GENERATE_REPORT]]"); // Roughly 10 Q&A pairs
+            resolve("Got it. Next, how many hours of sleep do you typically get in a night?");
+        }, 1500);
+    });
+  }
+
   try {
-    const contents = history.map((msg) => ({
-      role: msg.sender === "user" ? "user" : "model",
-      parts: [{ text: msg.text }],
+    const contents = history.map(msg => ({
+      role: msg.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: msg.text }]
     }));
 
-    const response = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents,
-        systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
-        generationConfig: {
-          maxOutputTokens: 200,
-        },
-      }),
-    });
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: contents,
+          systemInstruction: { parts: [{ text: SYSTEM_INSTRUCTION }] },
+          generationConfig: {
+            maxOutputTokens: 150, // Keep questions concise
+          }
+        })
+      }
+    );
 
     const data = await response.json();
-
-    return (
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "I see. How is your sleep quality?"
-    );
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "I see. Let's move to the next topic. How is your water intake?";
   } catch (error) {
     console.error("API Error:", error);
-    return "I'm having trouble connecting. Could you repeat that?";
+    return "Connection interrupted. Could you please answer that again?";
   }
 };
 
-
 const generateFinalReport = async (history) => {
-  try {
-    const conversationText = history
-      .map((m) => `${m.sender.toUpperCase()}: ${m.text}`)
-      .join("\n");
+  if (!apiKey) {
+    return `## Lifestyle Balance Report\n**Note:** API Key missing.\n\n### Overview\nSimulated overview of your habits.\n\n### What You're Doing Well\n- Consistent routine\n\n### Areas to Watch\n- High stress levels\n\n### Simple Steps Forward\n1. Take short breaks.\n2. Hydrate more often.`;
+  }
 
-    const response = await fetch(GEMINI_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            role: "user",
-            parts: [
-              {
-                text: `${REPORT_PROMPT}\n\nCONVERSATION LOG:\n${conversationText}`,
-              },
-            ],
-          },
-        ],
-        generationConfig: {
-          maxOutputTokens: 800,
-        },
-      }),
-    });
+  try {
+    const conversationText = history.map(m => `${m.sender.toUpperCase()}: ${m.text}`).join('\n');
+    
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `${REPORT_PROMPT}\n\nUSER RESPONSES LOG:\n${conversationText}` }] }]
+        })
+      }
+    );
 
     const data = await response.json();
-
-    return (
-      data.candidates?.[0]?.content?.parts?.[0]?.text ||
-      "Error generating report."
-    );
+    return data.candidates?.[0]?.content?.parts?.[0]?.text || "Error generating report.";
   } catch (error) {
-    console.error("Report Error:", error);
     return "Failed to generate report due to a connection error.";
   }
 };
-
-
 
 // --- Components ---
 
@@ -160,24 +122,24 @@ const IntroScreen = ({ onStart }) => (
     <div className="mb-8 p-8 bg-teal-500/10 rounded-full border border-teal-500/20 shadow-[0_0_50px_rgba(20,184,166,0.1)]">
       <Activity size={80} className="text-teal-400" />
     </div>
-    <h1 className="text-6xl font-black text-white mb-6 tracking-tight">
+    <h1 className="text-5xl md:text-6xl font-black text-white mb-6 tracking-tight">
       LifeStyleCheck
     </h1>
-    <p className="text-gray-400 text-xl max-w-xl mb-12 leading-relaxed font-light">
-      A personalized, AI-driven wellness assessment. 
-      Tell us how you really feel, and we'll identify potential lifestyle risks tailored specifically to you.
+    <p className="text-gray-400 text-lg md:text-xl max-w-2xl mb-12 leading-relaxed font-light">
+      A smart self-assessment tool for artisans, workers, and students.
+      Answer <strong className="text-teal-400 font-bold">10 simple questions</strong> to reflect on your daily habits and receive a personalized well-being report.
     </p>
     
     <button 
       onClick={onStart}
       className="group relative inline-flex items-center justify-center px-10 py-5 font-bold text-white transition-all duration-300 bg-teal-600 rounded-full hover:bg-teal-500 hover:scale-105 hover:shadow-[0_0_30px_rgba(20,184,166,0.5)] focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-gray-950"
     >
-      <span className="text-lg">Start My Assessment</span>
+      <span className="text-lg">Start Assessment</span>
       <ArrowRight className="ml-3 w-6 h-6 group-hover:translate-x-1 transition-transform" />
     </button>
 
     <div className="absolute bottom-8 text-gray-600 text-sm font-medium tracking-widest uppercase">
-      Privacy focused & AI powered
+      Simple • Private • Non-Medical
     </div>
   </div>
 );
@@ -215,8 +177,8 @@ const ReportCard = ({ reportMarkdown, onRestart }) => {
           <div className="inline-flex items-center justify-center w-16 h-16 bg-teal-500/10 rounded-full mb-4">
             <CheckCircle size={40} className="text-teal-500" />
           </div>
-          <h2 className="text-4xl font-bold text-white tracking-tight">Your Wellness Analysis</h2>
-          <p className="text-gray-400 text-lg">Personalized insights based on our conversation</p>
+          <h2 className="text-4xl font-bold text-white tracking-tight">Lifestyle Balance Report</h2>
+          <p className="text-gray-400 text-lg">A reflection on your daily habits and routines</p>
         </div>
 
         <div className="prose prose-invert prose-teal max-w-none">
@@ -242,7 +204,7 @@ const ReportCard = ({ reportMarkdown, onRestart }) => {
         <div className="bg-gray-900 rounded-2xl p-8 border border-gray-800 flex items-start gap-5 shadow-inner">
             <AlertCircle className="text-yellow-500 flex-shrink-0 mt-1" size={24} />
             <p className="text-sm text-gray-400 italic leading-relaxed">
-                Notice: This report is synthesized by an AI model. While it provides lifestyle insights, it is not a clinical diagnosis. Always consult with a qualified healthcare provider regarding medical conditions.
+                <strong>Disclaimer:</strong> This tool uses AI to provide general lifestyle guidance. It does not offer medical advice, diagnosis, or treatment. Prioritize professional medical consultation for health issues.
             </p>
         </div>
 
@@ -252,7 +214,7 @@ const ReportCard = ({ reportMarkdown, onRestart }) => {
             className="flex items-center gap-3 px-10 py-4 bg-gray-800 hover:bg-gray-700 text-white rounded-full transition-all font-bold border border-gray-700 shadow-xl active:scale-95"
           >
             <RotateCcw size={20} />
-            <span>Start Over</span>
+            <span>New Assessment</span>
           </button>
         </div>
 
@@ -294,6 +256,7 @@ const App = () => {
 
   const startChat = () => {
     setScreen('chat');
+    // Simplified starting message to kick off the 10 questions immediately
     setMessages([{
       sender: 'bot',
       text: 
@@ -339,7 +302,7 @@ const App = () => {
   };
 
   if (screen === 'intro') return <IntroScreen onStart={startChat} />;
-  if (screen === 'generating') return <LoadingIndicator text="Synthesizing your lifestyle profile..." />;
+  if (screen === 'generating') return <LoadingIndicator text="Analyzing your lifestyle habits..." />;
   if (screen === 'report') return <ReportCard reportMarkdown={reportData} onRestart={handleRestart} />;
 
   return (
@@ -354,14 +317,14 @@ const App = () => {
             </div>
             <div>
                 <span className="font-black text-xl tracking-tight block leading-none">LifeStyleCheck</span>
-                <span className="text-[10px] text-teal-500 font-bold uppercase tracking-widest mt-1 block">AI Diagnostic Assistant</span>
+                <span className="text-[10px] text-teal-500 font-bold uppercase tracking-widest mt-1 block">Smart Assessment Tool</span>
             </div>
           </div>
           <button 
             onClick={handleRestart} 
             className="px-4 py-2 rounded-lg text-xs font-bold text-gray-500 hover:text-white hover:bg-gray-800 transition-all uppercase tracking-tighter"
           >
-            End Session
+            Quit
           </button>
         </div>
       </div>
@@ -400,7 +363,7 @@ const App = () => {
               type="text"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
-              placeholder="Tell us about your routine, symptoms, or concerns..."
+              placeholder="Type your answer..."
               className="w-full bg-gray-800/80 text-white placeholder-gray-500 rounded-2xl py-5 pl-8 pr-16 focus:outline-none focus:ring-2 focus:ring-teal-500/40 border border-gray-700/50 transition-all shadow-2xl text-lg"
               autoFocus
               disabled={isBotTyping}
@@ -416,7 +379,7 @@ const App = () => {
           <div className="flex items-center justify-center gap-2 mt-4 text-gray-600">
             <div className="w-1 h-1 rounded-full bg-gray-700"></div>
             <p className="text-[10px] font-bold uppercase tracking-widest">
-              Context-Aware Analysis Enabled
+              Private & Secure • Self-Reflection Only
             </p>
             <div className="w-1 h-1 rounded-full bg-gray-700"></div>
           </div>
